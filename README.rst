@@ -1,7 +1,14 @@
 Quanfima
 =====================================================
+.. image:: https://travis-ci.org/rshkarin/quanfima.svg?branch=master 
+    :target: https://travis-ci.org/rshkarin/quanfima 
+    
+.. image:: https://readthedocs.org/projects/quanfima/badge/?version=latest 
+    :target: http://quanfima.readthedocs.io/en/latest/?badge=latest 
+    :alt: Documentation Status 
 
-*Quanfima* (**qu**\ antitative **an** \alysis of **fi**\ brous **ma**\ terials)
+
+*Quanfima* (**qu**\ antitative **an**\ alysis of **fi**\ brous **ma**\ terials)
 is a collection of useful functions for morphological analysis and visualization
 of 2D/3D data from various areas of material science. The aim is to simplify
 the analysis process by providing functionality for frequently required tasks
@@ -65,3 +72,18 @@ orientation and diameters, and plot the results.
   vis.plot_diameter_map(dmap, cskel, figsize=(10,10), cmap='gist_rainbow',
                         name='2d_polymer',
                         output_dir='/path/to/output/dir')
+                        
+.. code-block:: python
+
+  >> Porosity (Material 1): 0.845488888889
+
+.. image:: docs/source/_static/2d_polymer_data.png
+    :align: center
+    
+.. image:: docs/source/_static/2d_polymer_orientation_map.png
+    :width: 600 px
+    :align: center
+    
+.. image:: docs/source/_static/2d_polymer_diameter_map.png
+    :width: 600 px
+    :align: center
