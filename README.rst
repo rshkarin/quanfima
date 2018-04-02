@@ -77,12 +77,12 @@ orientation and diameters, and plot the results.
 
   >> Porosity (Material 1): 0.845488888889
 
-.. image:: _static\2d_polymer_data.png
+.. image:: docs/source/_static\2d_polymer_data.png
     :width: 90 %
     :align: center
-.. image:: _static\2d_polymer_orientation_map.png
+.. image:: docs/source/_static/2d_polymer_orientation_map.png
     :width: 90 %
     :align: center
-.. image:: _static\2d_polymer_diameter_map.png
+.. image:: docs/source/_static/2d_polymer_diameter_map.png
     :width: 90 %
     :align: center
