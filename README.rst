@@ -1,5 +1,6 @@
 Quanfima
 =====================================================
+.. image:: https://readthedocs.org/projects/quanfima/badge/?version=latest
 
 *Quanfima* (**qu**\ antitative **an** \alysis of **fi**\ brous **ma**\ terials)
 is a collection of useful functions for morphological analysis and visualization
