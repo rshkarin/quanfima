@@ -8,7 +8,7 @@ Quanfima
     :alt: Documentation Status 
 
 
-*Quanfima* (**qu**\ antitative **an** \alysis of **fi**\ brous **ma**\ terials)
+*Quanfima* (**qu**\ antitative **an**\ alysis of **fi**\ brous **ma**\ terials)
 is a collection of useful functions for morphological analysis and visualization
 of 2D/3D data from various areas of material science. The aim is to simplify
 the analysis process by providing functionality for frequently required tasks
@@ -77,12 +77,12 @@ orientation and diameters, and plot the results.
 
   >> Porosity (Material 1): 0.845488888889
 
-.. image:: docs/source/_static\2d_polymer_data.png
+.. image:: docs/source/_static/2d_polymer_data.png
     :width: 90 %
     :align: center
 .. image:: docs/source/_static/2d_polymer_orientation_map.png
-    :width: 70 %
+    :width: 50 %
     :align: center
 .. image:: docs/source/_static/2d_polymer_diameter_map.png
-    :width: 70 %
+    :width: 50 %
     :align: center
