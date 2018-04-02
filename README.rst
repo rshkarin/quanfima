@@ -81,8 +81,8 @@ orientation and diameters, and plot the results.
     :width: 90 %
     :align: center
 .. image:: docs/source/_static/2d_polymer_orientation_map.png
-    :width: 90 %
+    :width: 70 %
     :align: center
 .. image:: docs/source/_static/2d_polymer_diameter_map.png
-    :width: 90 %
+    :width: 70 %
     :align: center
