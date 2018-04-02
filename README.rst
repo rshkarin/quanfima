@@ -72,3 +72,17 @@ orientation and diameters, and plot the results.
   vis.plot_diameter_map(dmap, cskel, figsize=(10,10), cmap='gist_rainbow',
                         name='2d_polymer',
                         output_dir='/path/to/output/dir')
+                        
+.. code-block:: python
+
+  >> Porosity (Material 1): 0.845488888889
+
+.. image:: _static\2d_polymer_data.png
+    :width: 90 %
+    :align: center
+.. image:: _static\2d_polymer_orientation_map.png
+    :width: 90 %
+    :align: center
+.. image:: _static\2d_polymer_diameter_map.png
+    :width: 90 %
+    :align: center
