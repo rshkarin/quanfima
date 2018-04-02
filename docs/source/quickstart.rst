@@ -15,7 +15,7 @@ orientation and diameters, and plot the results.
   from quanfima import visualization as vis
   from quanfima import utils
 
-  img = io.imread('C:/Users/Administrator/Documents/polymer_slice.tif')
+  img = io.imread('../../data/polymer_slice.tif')
 
   th_val = filters.threshold_otsu(img)
   img_seg = (img > th_val).astype(np.uint8)
@@ -34,10 +34,10 @@ orientation and diameters, and plot the results.
   vis.plot_orientation_map(omap, fskel, min_label=u'0°', max_label=u'180°',
                            figsize=(10,10),
                            name='2d_polymer',
-                           output_dir='C:/Users/Administrator/Documents/2d_analysis')
+                           output_dir='../../data/results')
   vis.plot_diameter_map(dmap, cskel, figsize=(10,10), cmap='gist_rainbow',
                         name='2d_polymer',
-                        output_dir='C:/Users/Administrator/Documents/2d_analysis')
+                        output_dir='../../data/results')
 
 .. code-block:: python
 
@@ -66,7 +66,7 @@ analyze 3D fiber orientation and diameters, and visualize the results.
     from quanfima import visualization as vis
     from quanfima import utils
 
-    data = np.memmap('C:/Users/Administrator/Documents/polymer3d_8bit_128x128x128.raw',
+    data = np.memmap('../../data/polymer3d_8bit_128x128x128.raw',
                      shape=(128,128,128), dtype=np.uint8, mode='r')
 
     data_seg = np.zeros_like(data, dtype=np.uint8)
@@ -83,19 +83,19 @@ analyze 3D fiber orientation and diameters, and visualize the results.
     pdata, pskel, pskel_thick = utils.prepare_data(data_seg)
     oprops =  mrph.estimate_tensor_parallel('polymer_orientation_w32', pskel,
                                             pskel_thick, 32,
-                                            'C:/Users/Administrator/Documents/3d_analysis')
+                                            '../../data/results')
 
     odata = np.load(oprops['output_path']).item()
     lat, azth, skel = odata['lat'], odata['azth'], odata['skeleton']
 
     dprops = mrph.estimate_diameter_single_run('polymer_diameter',
-                                               'C:/Users/Administrator/Documents/3d_analysis',
+                                               '../../data/results',
                                                pdata, skel, lat, azth)
     dmtr = np.load(dprops['output_path']).item()['diameter']
 
     # plot results
     vis.plot_3d_orientation_map('polymer_w32', lat, azth,
-                                output_dir='C:/Users/Administrator/Documents/3d_analysis',
+                                output_dir='../../data/results',
                                 camera_azth=40.47,
                                 camera_elev=32.5,
                                 camera_fov=35.0,
@@ -103,7 +103,7 @@ analyze 3D fiber orientation and diameters, and visualize the results.
                                 camera_zoom=0.005124)
 
     vis.plot_3d_diameter_map('polymer_w32', dmtr,
-                             output_dir='C:/Users/Administrator/Documents/3d_analysis',
+                             output_dir='../../data/results',
                              measure_quantity='vox',
                              camera_azth=40.47,
                              camera_elev=32.5,
@@ -144,7 +144,7 @@ measurements of some material's property.
     _, _ = utils.calculate_tukey_posthoc(df_elongation, 'elongation',
                                          name='samples_elongation',
                                          write=True,
-                                         output_dir='C:/Users/Administrator/Documents/p_vals')
+                                         output_dir='../../data/results')
 
 .. code:: python
 
@@ -228,19 +228,19 @@ properties and visualize.
     pdata, pskel, pskel_thick = utils.prepare_data(volume)
     oprops =  mrph.estimate_tensor_parallel('dataset_orientation_w36',
                                             pskel, pskel_thick, 36,
-                                            'C:/Users/Administrator/Documents/3d_analysis')
+                                            '../../data/results')
 
     odata = np.load(oprops['output_path']).item()
     lat, azth, skel = odata['lat'], odata['azth'], odata['skeleton']
 
     dprops = mrph.estimate_diameter_single_run('dataset_diameter',
-                                               'C:/Users/Administrator/Documents/3d_analysis',
+                                               '../../data/results',
                                                pdata, skel, lat, azth)
     dmtr = np.load(dprops['output_path']).item()['diameter']
 
     # plot results
     vis.plot_3d_orientation_map('dataset_w36', lat, azth,
-                                output_dir='C:/Users/Administrator/Documents/3d_analysis',
+                                output_dir='../../data/results',
                                 camera_azth=40.47,
                                 camera_elev=32.5,
                                 camera_fov=35.0,
@@ -248,7 +248,7 @@ properties and visualize.
                                 camera_zoom=0.005124)
 
     vis.plot_3d_diameter_map('dataset_w36', dmtr,
-                             output_dir='C:/Users/Administrator/Documents/3d_analysis',
+                             output_dir='../../data/results',
                              measure_quantity='vox',
                              camera_azth=40.47,
                              camera_elev=32.5,
