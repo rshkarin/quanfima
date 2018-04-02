@@ -80,10 +80,8 @@ orientation and diameters, and plot the results.
 .. image:: docs/source/_static/2d_polymer_data.png
     :align: center
     
-.. image:: docs/source/_static/2d_polymer_orientation_map.png
-    :width: 600 px
+.. image:: docs/source/_static/2d_polymer_orientation_map_600px.png
     :align: center
     
-.. image:: docs/source/_static/2d_polymer_diameter_map.png
-    :width: 600 px
+.. image:: docs/source/_static/2d_polymer_diameter_map_600px.png
     :align: center
