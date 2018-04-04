@@ -1,4 +1,4 @@
-Quanfima
+.. image:: docs/source/_static/logo.png
 =====================================================
 .. image:: https://travis-ci.org/rshkarin/quanfima.svg?branch=master 
     :target: https://travis-ci.org/rshkarin/quanfima 
