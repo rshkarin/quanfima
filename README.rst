@@ -1,7 +1,7 @@
 .. image:: docs/source/_static/logo.png
     :align: left
-
-=====================================================
+    
+-----------
 
 .. image:: https://travis-ci.org/rshkarin/quanfima.svg?branch=master 
     :target: https://travis-ci.org/rshkarin/quanfima 
