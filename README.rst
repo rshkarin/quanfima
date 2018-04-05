@@ -8,7 +8,12 @@
     
 .. image:: https://readthedocs.org/projects/quanfima/badge/?version=latest 
     :target: http://quanfima.readthedocs.io/en/latest/?badge=latest 
-    :alt: Documentation Status 
+    :alt: Documentation Status
+    
+.. image:: https://zenodo.org/badge/127795855.svg
+   :target: https://zenodo.org/badge/latestdoi/127795855
+
+
 
 
 *Quanfima* (**qu**\ antitative **an**\ alysis of **fi**\ brous **ma**\ terials)
