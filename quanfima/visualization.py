@@ -591,7 +591,7 @@ def create_pie_chart(data, rngs, colors=['#244268', '#426084', '#67809F', '#95A9
         return '$\mathregular{10^{%d}}$' % (len(sv)-2) if val % 10 == 0 else '%0.0e' % val
 
     def get_title(v1, v2, measure_quantity):
-        ftm = '%s $\minus$ %s %s$'
+        ftm = '%s $\minus$ %s %s'
         return ftm % (number(v1), number(v2), measure_quantity)
 
     data_ranges = []
