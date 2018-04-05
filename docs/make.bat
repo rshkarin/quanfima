@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=source
 set BUILDDIR=build
-set SPHINXPROJ=matscipy
+set SPHINXPROJ=quanfima
 
 if "%1" == "" goto help
 

@@ -1,4 +1,5 @@
-API reference
+=============
+API Reference
 =============
 
 quanfima\.morphology module

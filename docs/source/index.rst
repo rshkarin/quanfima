@@ -26,3 +26,4 @@ User Guide
     overview
     quickstart
     quanfima
+    change_log

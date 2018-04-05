@@ -1,4 +1,5 @@
 import os
+import math
 import numpy as np
 import matplotlib as mpl
 import matplotlib.colors as colors
@@ -995,4 +996,88 @@ def plot_color_wheel(name, output_dir=None, dpi=500, xlabel='Elevation',
                     bbox_inches='tight',
                     pad_inches=0.1,
                     dpi=dpi)
+    plt.show()
+
+def plot_fourier_orientation(data, orient_blocks, block_shape, figsize=(12,12),
+                             cmap='gray', line_length=20, line_width=2.5,
+                             line_color='red', line_style='-', name=None,
+                             output_dir=None, dpi=200):
+    """Plots the orientation map in a block-wise manner.
+
+    Plots the orientation vector over the image `data` at the center of each
+    block of the subdivided image. The orientation at every block 'orient_blocks'
+    and its size `block_shape` are specified by orientation estimation method.
+    The result can be and stored as a png file with DPI of `dpi` to the folder
+    specified by `output_dir`.
+
+    Parameters
+    ----------
+    data : ndarray
+        An image on top of which, the orientation will be plotted..
+
+    orient_blocks : ndarray
+        2D array of orientation at every block of the subdivided image.
+
+    block_shape : tuple
+        Indicates the block size within which the orientation is calculated.
+
+    figsize : tuple of integers
+        Indicates the size of the output figure.
+
+    cmap : str
+        Indicates the name of a colormap used for image.
+
+    line_length : integer
+        Indicates the length of the orientation vector at each block.
+
+    line_width : float
+        Indicates the line width of the orientation vector at each block.
+
+    line_color : str
+        Indicates the line color of the orientation vector at each block.
+
+    line_style : str
+        Indicates the line style of the orientation vector at each block.
+
+    name : str
+        Indicates the name of the output png file.
+
+    output_dir : str
+        Indicates the path to the output folder where the image will be stored.
+
+    dpi : integer
+        Indicates the DPI of the output image.
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+
+    ax.xaxis.grid(False)
+    ax.yaxis.grid(False)
+    ax.set_axis_off()
+
+    ax.imshow(data, cmap=cmap)
+
+    for i in xrange(orient_blocks.shape[0]):
+        for j in xrange(orient_blocks.shape[1]):
+            y0, x0 = block_shape[0] * j + block_shape[0]/2, \
+                     block_shape[1] * i + block_shape[1]/2
+
+            orientation = orient_blocks[i ,j]
+
+            x2 = x0 - math.sin(orientation) * line_length
+            y2 = y0 - math.cos(orientation) * line_length
+
+            x3 = x0 + math.sin(orientation) * line_length
+            y3 = y0 + math.cos(orientation) * line_length
+
+            ax.plot((x2, x3), (y2, y3), linestyle=line_style,
+                    linewidth=line_width, color=line_color)
+
+    if (output_dir is not None) and (name is not None):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        plt.tight_layout()
+        fig.savefig(os.path.join(output_dir, '{}_fourier_orientation_map.png'.format(name)),
+                    bbox_inches='tight', transparent=True, pad_inches=0.05, dpi=dpi)
+
     plt.show()

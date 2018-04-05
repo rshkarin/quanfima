@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='quanfima',
-      version='0.1a1',
+      version='0.1a3',
       description='The package for morphological analysis and visualization of fibrous materials.',
       long_description=readme(),
       classifiers=[
@@ -19,7 +19,7 @@ setup(name='quanfima',
       author='Roman Shkarin, Andrei Shkarin',
       author_email='roman.v.shkarin@gmail.com, andrei.shkarin@gmail.com',
       license='MIT',
-      packages=['quanfima'],
+      packages=['quanfima', 'docs'],
       python_requires='>=2.6,<3',
       install_requires=[
           'matplotlib==2.0.2',
