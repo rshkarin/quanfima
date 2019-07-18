@@ -183,7 +183,7 @@ def estimate_fiber_properties(fiber_mask, fiber_skel, paddding=25, window_radius
     output_orientation_map, output_diameter_map = \
                             np.zeros_like(padded_fiber_skel, dtype=np.float32), \
                             np.zeros_like(padded_fiber_skel, dtype=np.float32)
-
+    
     pcy, pcx = (window_radius*2+1)/2., (window_radius*2+1)/2.
 
     ycords, xcords = np.nonzero(padded_fiber_skel)
@@ -536,7 +536,7 @@ def estimate_tensor(name, skel, data, window_size, output_dir, sigma=0.025, make
     te = time.time()
     output_props['time'] = te-ts
 
-    print "Tensor time: {}s".format(output_props['time'])
+    print("Tensor time: {}s" % (output_props['time']))
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -642,7 +642,7 @@ def estimate_tensor_parallel(name, skel, data, window_size, output_dir, sigma=0.
 
     pts = zip(Z, Y, X)
     data_patches = [extract_patch(data, pt, ws2) for pt in pts]
-    print len(data_patches)
+    print(len(data_patches))
     args = zip(data_patches, itertools.repeat(sigma))
 
     proc_pool = Pool(processes=n_processes)
@@ -659,7 +659,7 @@ def estimate_tensor_parallel(name, skel, data, window_size, output_dir, sigma=0.
     tens_azth_arr[Z, Y, X] = azth_arr
     skel_est[Z, Y, X] = skel_arr
 
-    print "Tensor parallel time: %fs" % (output_props['time'])
+    print("Tensor parallel time: %fs" % (output_props['time']))
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -829,7 +829,7 @@ def estimate_diameter_gpu(skel, data, lat_data, azth_data, n_scan_angles, max_it
         The dictionary of the 3D array of estimated diameter and the execution time.
     """
     if not cuda_available:
-        print 'The pycuda package is not found. The diameter estimation cannot be done.'
+        print('The pycuda package is not found. The diameter estimation cannot be done.')
         return None
 
     program, diameter3d = _diameter_kernel()
@@ -890,7 +890,7 @@ def estimate_diameter_gpu(skel, data, lat_data, azth_data, n_scan_angles, max_it
     end.synchronize()
 
     dm_time = start.time_till(end)*1e-3
-    print "Diameter estimation time: %fs" % (dm_time)
+    print("Diameter estimation time: %fs" % (dm_time))
 
     radius_arr = gpu_radius_arr.get()
 
@@ -940,7 +940,7 @@ def estimate_diameter_single_run(name, output_dir, data, skel, lat_data, azth_da
         the number of processes, and the execution time.
     """
     if not cuda_available:
-        print 'The pycuda package is not found. The diameter estimation cannot be done.'
+        print('The pycuda package is not found. The diameter estimation cannot be done.')
         return None
 
     output = dict()
@@ -961,7 +961,7 @@ def estimate_diameter_single_run(name, output_dir, data, skel, lat_data, azth_da
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    print 'Total diameter execution time: {}'.format(output_props['time'])
+    print('Total diameter execution time: {}'%format(output_props['time']))
 
     if make_output:
         opath = os.path.join(output_dir, '{}.npy').format(name)
@@ -1023,7 +1023,7 @@ def estimate_diameter_batches(name, output_dir, data, skel, lat_data, azth_data,
         the number of processes, and the execution time.
     """
     if not cuda_available:
-        print 'The pycuda package is not found. The diameter estimation cannot be done.'
+        print('The pycuda package is not found. The diameter estimation cannot be done.')
         return None
 
     output = dict()
@@ -1039,7 +1039,7 @@ def estimate_diameter_batches(name, output_dir, data, skel, lat_data, azth_data,
 
     depth, height, width = data.shape
     batches_idxs = np.array_split(np.arange(depth), np.ceil(depth / float(slices_per_batch)))
-    print batches_idxs
+    print(batches_idxs)
 
     for batch_idxs in batches_idxs:
         batch_len = len(batch_idxs)
@@ -1084,7 +1084,7 @@ def estimate_diameter_batches(name, output_dir, data, skel, lat_data, azth_data,
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    print 'Total diameter execution time: {}'.format(output_props['time'])
+    print('Total diameter execution time: {}'%(output_props['time']))
 
     if make_output:
         opath = os.path.join(output_dir, '{}.npy').format(name)
@@ -1118,18 +1118,18 @@ def object_counter(stack_binary_data):
     """
     measurements_vals = _MEASUREMENTS.values()
 
-    print 'Object counting - Labeling...'
+    print('Object counting - Labeling...')
     labeled_stack, num_labels = ndi.measurements.label(stack_binary_data)
     objects_stats = pd.DataFrame(columns=measurements_vals)
 
-    print 'Object counting - Stats gathering...'
+    print('Object counting - Stats gathering...')
     for slice_idx in np.arange(labeled_stack.shape[0]):
         for region in measure.regionprops(labeled_stack[slice_idx]):
             objects_stats = objects_stats.append({mname: region[mval]
                                         for mname, mval in _MEASUREMENTS.items()},
                                             ignore_index=True)
 
-    print 'Object counting - Stats grouping...'
+    print('Object counting - Stats grouping...')
     objects_stats = objects_stats.groupby('Label', as_index=False).sum()
     objects_stats['Sphericity'] = _calc_sphericity(objects_stats['Area'],
                                                    objects_stats['Perimeter'])
