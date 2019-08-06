@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import math
 import numpy as np
@@ -7,7 +8,6 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import mpl_toolkits.axisartist.floating_axes as floating_axes
-from __future__ import print_function
 from matplotlib import cm
 from scipy import ndimage as ndi, interpolate
 from skimage import morphology
