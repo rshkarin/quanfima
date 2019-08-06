@@ -1,6 +1,7 @@
 import os
 import operator
 import numpy as np
+from __future__ import print_function
 from scipy import ndimage as ndi
 from skimage import morphology
 from matplotlib import colors

@@ -3,6 +3,7 @@ import time
 import os
 import itertools
 import numpy as np
+from __future__ import print_function
 from skimage import feature, measure, filters
 from skimage.util.shape import view_as_blocks
 from scipy import ndimage as ndi

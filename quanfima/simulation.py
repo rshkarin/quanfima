@@ -2,6 +2,7 @@ import time
 import os
 import itertools
 import numpy as np
+from __future__ import print_function
 from multiprocessing import Pool
 from scipy import ndimage as ndi
 from sklearn import metrics
