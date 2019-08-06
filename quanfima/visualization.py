@@ -2,6 +2,7 @@ import os
 import math
 import numpy as np
 import matplotlib as mpl
+from skimage import io, filters
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -102,7 +103,7 @@ def plot_orientation_map(orient_map, fiber_skel, radius_structure_elem=1,
                     bbox_inches='tight',
                     pad_inches=0.1,
                     dpi=dpi)
-
+        
     plt.show()
 
 
@@ -168,9 +169,8 @@ def plot_diameter_map(thickness_map, fiber_skel, radius_structure_elem=1,
     fig = plt.figure(figsize=figsize)
     ax = plt.subplot(111)
     ax.set_axis_off()
-
+    
     im = ax.imshow(masked_thickness_map, cmap=cmap_obj, vmin=tmin, vmax=tmax)
-
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size="2.5%", pad=0.05)
     cbar = plt.colorbar(im, cax=cax)
@@ -180,13 +180,11 @@ def plot_diameter_map(thickness_map, fiber_skel, radius_structure_elem=1,
     if (output_dir is not None) and (name is not None):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-
         fig.savefig(os.path.join(output_dir, '{}_diameter_map.png'.format(name)),
                     transparent=False,
                     bbox_inches='tight',
                     pad_inches=0.1,
                     dpi=dpi)
-
     plt.show()
 
 
@@ -224,8 +222,8 @@ def gather_polar_errors(datasets_path, estimation_path,
     estimated_dataset = np.load(estimation_path).item()
     idxs = estimated_dataset['indices']
 
-    print reference_dataset.keys()
-    print estimated_dataset.keys()
+    print(reference_dataset.keys())
+    print(estimated_dataset.keys())
 
     ref_azth, ref_lat = reference_dataset['azth'][idxs], reference_dataset['lat'][idxs]
     res_azth, res_lat = estimated_dataset['azth'][idxs], estimated_dataset['lat'][idxs]
@@ -606,12 +604,12 @@ def create_pie_chart(data, rngs, colors=['#244268', '#426084', '#67809F', '#95A9
     num_elem = [len(p) for p in data_ranges]
     se = sum(num_elem)
 
-    print 'Num of particles: {}'.format(se)
+    print('Num of particles: {}'%(se))
 
     proc_particles = [n/float(se) * 100.0 for n in num_elem]
 
     for size, rng in zip(num_elem, rngs):
-        print '{}-{}: {}'.format(rng[0], rng[1], size)
+        print('{}-{}: {}'%(rng[0], rng[1], size))
 
     titles = [get_title(minv, maxv, measure_quantity) for minv, maxv in rngs]
 
@@ -739,7 +737,7 @@ def plot_3d_orientation_map(name, lat_data, azth_data, radius_structure_elem=1,
         Indicates the background color of the figure.
     """
     if not visvis_available:
-        print 'The visvis package is not found. The visualization cannot be done.'
+        print('The visvis package is not found. The visualization cannot be done.')
         return
 
     rmin, rmax, cmin, cmax, zmin, zmax = _bbox_3D(azth_data)
@@ -757,7 +755,7 @@ def plot_3d_orientation_map(name, lat_data, azth_data, radius_structure_elem=1,
     Z, Y, X = skel.nonzero()
     vol_orient = np.zeros(skel.shape + (3,), dtype=np.float32)
 
-    print vol_orient.size, vol_orient[skel.nonzero()].size
+    print(vol_orient.size, vol_orient[skel.nonzero()].size)
 
     for z, y, x in zip(Z, Y, X):
         vol_orient[z, y, x] = geo2rgb(lat[z, y, x], azth[z, y, x])
@@ -880,7 +878,7 @@ def plot_3d_diameter_map(name, data, unit_scale=1.0, measure_quantity='vox',
         Indicates the offset of the colorbar from the right window side.
     """
     if not visvis_available:
-        print 'The visvis package is not found. The visualization cannot be done.'
+        print('The visvis package is not found. The visualization cannot be done.')
         return
 
     rmin, rmax, cmin, cmax, zmin, zmax = _bbox_3D(data)

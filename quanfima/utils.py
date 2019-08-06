@@ -117,7 +117,7 @@ def calculate_tukey_posthoc(df, column, type_column='type', verbose=True, write=
             os.makedirs(output_dir)
 
         fout = open(os.path.join(output_dir, name + '.txt'), 'w')
-        print os.path.join(output_dir, name + '.txt')
+        print(os.path.join(output_dir, name + '.txt'))
 
     if write:
         print >> fout, 'Tukey post-hoc ({0})'.format(column)
@@ -125,9 +125,9 @@ def calculate_tukey_posthoc(df, column, type_column='type', verbose=True, write=
         print >> fout, mc.groupsunique
 
     if verbose:
-        print 'Tukey post-hoc ({0})'.format(column)
-        print tt
-        print mc.groupsunique
+        print('Tukey post-hoc ({0})'%(column))
+        print(tt)
+        print(mc.groupsunique)
 
     pvals = psturng(st_range, len(tt.groupsunique), tt.df_total)
 
@@ -145,6 +145,6 @@ def calculate_tukey_posthoc(df, column, type_column='type', verbose=True, write=
         if fout and write:
             print >> fout, '{}: {}'.format(grp, p)
         if verbose:
-            print grp, ': ', p
+            print(grp, ': ', p)
 
     return out, min_item
