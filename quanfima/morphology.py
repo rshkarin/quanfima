@@ -459,97 +459,97 @@ def orientation_3d_tensor_vigra(data, sigma=0.1):
     return (lat, azth)
 
 
-def estimate_tensor(name, skel, data, window_size, output_dir, sigma=0.025, make_output=True):
-    """Computes 3D orientation at every point of a skeleton of data.
+# def estimate_tensor(name, skel, data, window_size, output_dir, sigma=0.025, make_output=True):
+#     """Computes 3D orientation at every point of a skeleton of data.
 
-    Estimates 3D orientation at every point of the skeleton `skel` extracted from the binary
-    data `data` within a 3D local window of size `window_size` using the tensor-based approach
-    with a Gaussian smoothing of `sigma`.
+#     Estimates 3D orientation at every point of the skeleton `skel` extracted from the binary
+#     data `data` within a 3D local window of size `window_size` using the tensor-based approach
+#     with a Gaussian smoothing of `sigma`.
 
-    Parameters
-    ----------
-    name : str
-        Indicates the name of the output npy file.
+#     Parameters
+#     ----------
+#     name : str
+#         Indicates the name of the output npy file.
 
-    skel : 3D array
-        Indicates the skeleton of the binary data.
+#     skel : 3D array
+#         Indicates the skeleton of the binary data.
 
-    data : 3D array
-        Indicates the 3D binary data.
+#     data : 3D array
+#         Indicates the 3D binary data.
 
-    window_size : integer
-        Indicates the size of the 3D local window.
+#     window_size : integer
+#         Indicates the size of the 3D local window.
 
-    output_dir : str
-        Indicates the path to the output folder where the data will be stored.
+#     output_dir : str
+#         Indicates the path to the output folder where the data will be stored.
 
-    output_fmt : str
-        Indicates the format of
+#     output_fmt : str
+#         Indicates the format of
 
-    sigma : float
-        Indicates the sigma value of the Gaussian filter.
+#     sigma : float
+#         Indicates the sigma value of the Gaussian filter.
 
-    make_output : boolean
-        Specifies if the estimated data should be stored.
+#     make_output : boolean
+#         Specifies if the estimated data should be stored.
 
-    Returns
-    -------
-    output_props : dict
-        The dictionary of properties specifying the sample name, the algorithm name, the number
-        of processes, and the execution time.
-    """
-    output_props = dict()
+#     Returns
+#     -------
+#     output_props : dict
+#         The dictionary of properties specifying the sample name, the algorithm name, the number
+#         of processes, and the execution time.
+#     """
+#     output_props = dict()
 
-    Z, Y, X = skel.nonzero()
-    tens_lat_arr = np.zeros_like(skel, dtype=np.float32)
-    tens_azth_arr = np.zeros_like(skel, dtype=np.float32)
-    skel_est = np.zeros_like(skel, dtype=np.int32)
+#     Z, Y, X = skel.nonzero()
+#     tens_lat_arr = np.zeros_like(skel, dtype=np.float32)
+#     tens_azth_arr = np.zeros_like(skel, dtype=np.float32)
+#     skel_est = np.zeros_like(skel, dtype=np.int32)
 
-    ws = np.uint32(window_size)
-    ws2 = ws/2
-    skel_shape = skel.shape
+#     ws = np.uint32(window_size)
+#     ws2 = ws/2
+#     skel_shape = skel.shape
 
-    output_props['sample_name'] = name
-    output_props['type'] = 'tensor'
-    output_props['n_processes'] = 1
+#     output_props['sample_name'] = name
+#     output_props['type'] = 'tensor'
+#     output_props['n_processes'] = 1
 
-    ts = time.time()
+#     ts = time.time()
 
-    for idx, pt in enumerate(zip(Z, Y, X)):
-        lim0 = pt - ws2
-        lim1 = pt + ws2
+#     for idx, pt in enumerate(zip(Z, Y, X)):
+#         lim0 = pt - ws2
+#         lim1 = pt + ws2
 
-        if any(np.array(lim0) < 0) or any(np.array(lim1) > (skel_shape[0] - 1)):
-            skel_est[pt] = -1
-            continue
+#         if any(np.array(lim0) < 0) or any(np.array(lim1) > (skel_shape[0] - 1)):
+#             skel_est[pt] = -1
+#             continue
 
-        z0, y0, x0 = lim0
-        z1, y1, x1 = lim1
+#         z0, y0, x0 = lim0
+#         z1, y1, x1 = lim1
 
-        area = data[z0:z1, y0:y1, x0:x1]
+#         area = data[z0:z1, y0:y1, x0:x1]
 
-        lat, azth = orientation_3d_tensor_vigra(area, sigma)
+#         lat, azth = orientation_3d_tensor_vigra(area, sigma)
 
-        tens_lat_arr[pt] = lat
-        tens_azth_arr[pt] = azth
-        skel_est[pt] = 255
+#         tens_lat_arr[pt] = lat
+#         tens_azth_arr[pt] = azth
+#         skel_est[pt] = 255
 
-    te = time.time()
-    output_props['time'] = te-ts
+#     te = time.time()
+#     output_props['time'] = te-ts
 
-    print("Tensor time: {}s" % (output_props['time']))
+#     print("Tensor time: {}s" % (output_props['time']))
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+#     if not os.path.exists(output_dir):
+#         os.makedirs(output_dir)
 
-    if make_output:
-        opath = os.path.join(output_dir, '{}.npy').format(name)
-        output_props['output_path'] = opath
-        output = {'lat': tens_lat_arr, 'azth': tens_azth_arr, 'skeleton': skel_est, 'indices': skel_est > 0}
-        output['props'] = output_props
-        np.save(opath, output)
+#     if make_output:
+#         opath = os.path.join(output_dir, '{}.npy').format(name)
+#         output_props['output_path'] = opath
+#         output = {'lat': tens_lat_arr, 'azth': tens_azth_arr, 'skeleton': skel_est, 'indices': skel_est > 0}
+#         output['props'] = output_props
+#         np.save(opath, output)
 
-    return output_props
+#     return output_props
 
 
 def execute_tensor(patch, sigma):

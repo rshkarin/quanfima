@@ -2,8 +2,8 @@
 
 import logging
 
-__version__ = '0.1a'
-__log_name__ = 'matscipy'
+__version__ = '1.0'
+__log_name__ = 'quanfima'
 log = logging.getLogger(__log_name__)
 
 cuda_available = True
