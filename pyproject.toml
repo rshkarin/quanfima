@@ -1,0 +1,95 @@
+[tool.poetry]
+name = "quanfima"
+version = "1.0.0"
+description = "The package for morphological analysis and visualization of fibrous materials."
+authors = [
+    "Roman Shkarin <roman.v.shkarin@gmail.com>",
+]
+license = "MIT"
+readme = "README.md"
+
+documentation = "https://rshkarin.github.io/quanfima"
+homepage = "https://rshkarin.github.io/quanfima"
+repository = "https://github.com/rshkarin/quanfima"
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+
+packages = [
+    { include = "quanfima", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.10, <4.0"
+
+[tool.poetry.group.dev.dependencies]
+tryceratops = "^2.3.2"
+autoflake = "^2.2.1"
+black = "^23.10.0"
+flake8 = "^6.1.0"
+flake8-bugbear = "^23.9.16"
+flake8-builtins = "^2.1.0"
+flake8-comprehensions = "^3.14.0"
+flake8-debugger = "^4.1.2"
+flake8-eradicate = "^1.5.0"
+flake8-logging-format = "^0.9.0"
+isort = "^5.12.0"
+mkdocstrings = {version = ">=0.18", extras = ["python"]}
+mkdocs-material = "^9.4.6"
+mypy = "^1.6.1"
+pep8-naming = "^0.13.3"
+pre-commit = "^3.5.0"
+pymdown-extensions = "^10.3.1"
+pytest = "^7.4.2"
+pytest-github-actions-annotate-failures = "^0.2.0"
+pytest-cov = "^4.1.0"
+python-kacl = "^0.4.6"
+pyupgrade = "^3.15.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+src_paths = ["src", "tests"]
+
+[tool.black]
+target-version = ["py310"]
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+addopts = """\
+    --cov quanfima \
+    --cov tests \
+    --cov-report term-missing \
+    --no-cov-on-fail \
+"""
+
+[tool.coverage.report]
+fail_under = 100
+exclude_lines = [
+    'if TYPE_CHECKING:',
+    'pragma: no cover'
+]
+
+[tool.mypy]
+disallow_any_unimported = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+check_untyped_defs = true
+show_error_codes = true
