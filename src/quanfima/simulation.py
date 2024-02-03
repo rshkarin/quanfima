@@ -1,7 +1,7 @@
-from __future__ import print_function
 import time
 import os
 import itertools
+
 import numpy as np
 from multiprocessing import Pool
 from scipy import ndimage as ndi
@@ -9,15 +9,14 @@ from sklearn import metrics
 from skimage import filters, morphology, data as skidata, exposure, draw
 
 
-def random_in(rng, number=1):
-    """Returns a random value within a given range.
-    """
+def _random_in(rng, number=1):
+    """Returns a random value within a given range."""
     start, end = rng
     values = np.random.random_sample(number) * (end - start) + start
     return values[0] if number == 1 else values
 
 
-def mkfiber(dims_size, length, radius, azth, lat, offset_xyz):
+def _mkfiber(dims_size, length, radius, azth, lat, offset_xyz):
     """Computes fiber coordinates and its length.
 
     Computes a fiber of speficied `length`, `radius`, oriented under azimuth `azth` and
@@ -52,15 +51,23 @@ def mkfiber(dims_size, length, radius, azth, lat, offset_xyz):
     """
     dims_size = np.array(dims_size)
 
-    half_pi = np.pi / 2.
-    mx = np.array([[1., 0., 0],
-                   [0., np.cos(lat), np.sin(lat)],
-                   [0., -np.sin(lat), np.cos(lat)]])
+    half_pi = np.pi / 2.0
+    mx = np.array(
+        [
+            [1.0, 0.0, 0],
+            [0.0, np.cos(lat), np.sin(lat)],
+            [0.0, -np.sin(lat), np.cos(lat)],
+        ]
+    )
 
     azth += half_pi
-    mz = np.array([[np.cos(azth), -np.sin(azth), 0],
-                   [np.sin(azth), np.cos(azth), 0],
-                   [0., 0., 1.]])
+    mz = np.array(
+        [
+            [np.cos(azth), -np.sin(azth), 0],
+            [np.sin(azth), np.cos(azth), 0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
 
     # Directional vector
     dl = 1
@@ -71,45 +78,72 @@ def mkfiber(dims_size, length, radius, azth, lat, offset_xyz):
 
     # Compute length
     n_steps = np.round(length / dl)
-    half_steps = int(np.ceil(n_steps / 2.))
+    half_steps = int(np.ceil(n_steps / 2.0))
     steps = range(half_steps - int(n_steps), half_steps)
 
     # Draw circle perpedicular to the directional vector
-    X, Y = draw.circle(0, 0, radius)
+    X, Y = draw.ellipse(0, 0, radius, radius)
     Z = np.repeat(0, len(Y))
     circle_pts = np.array([X, Y, Z])
     circle_pts = np.dot(mx, circle_pts)
     circle_pts = np.dot(mz, circle_pts)
+    
+    # print("circle_pts = ", circle_pts)
+    # print("np array = ", np.array(circle_pts))
 
     # Propogate the circle profile along the directional vector
-    slice_pts = np.array(zip(*circle_pts))
+    slice_pts = np.array(circle_pts)
     dxyz = np.array([dx, dy, dz])
-    step_shifts = np.array([step * dxyz for step in steps])  # [(dx,dy,dz), ...] for each step
+    step_shifts = np.array(
+        [step * dxyz for step in steps]
+    )  # [(dx,dy,dz), ...] for each step
     center_shift = dims_size * 0.5 + offset_xyz  # (x, y ,z)
-    slices_pts = np.round(np.array([slice_pts + step_shift + center_shift
-                                        for step_shift in step_shifts]))
+    slices_pts = np.round(
+            np.array([slice_pts + step_shift[:, np.newaxis] + center_shift[:, np.newaxis] for step_shift in step_shifts])
+    )
 
     # Filter all the points which are outside the boundary
-    pt_filter = lambda pt: np.all(np.greater_equal(pt, (0, 0, 0))) and \
-                           np.all(np.less(np.array(pt), dims_size))
+    pt_filter = lambda pt: np.all(np.greater_equal(pt, (0, 0, 0))) and np.all(
+        np.less(np.array(pt), dims_size)
+    )
+
+    # transposed_slices_pts = np.transpose(slices_pts) 
+    # print("slice_pts =", slice_pts)
     n_slices = 0
     fiber_pts = None
     for pts in slices_pts:
-        slice_pts_mask = [pt_filter(pt) for pt in pts]
-        slice_pts = pts[slice_pts_mask].astype(np.int32)
+        # print("pts = ", pts)
+        # for pt in np.transpose(pts): 
+        #     print("pt =", pt)
+        transposed_pts = np.transpose(pts)
+        slice_pts_mask = [pt_filter(pt) for pt in transposed_pts]
+        # print("slice_pts_mask =", slice_pts_mask)
+        slice_pts = transposed_pts[slice_pts_mask].astype(np.int32)
         if len(slice_pts) > 0:
             n_slices += 1
-            fiber_pts = slice_pts if fiber_pts is None else \
-                                                np.concatenate((fiber_pts, slice_pts))
+            fiber_pts = (
+                slice_pts
+                if fiber_pts is None
+                else np.concatenate((fiber_pts, slice_pts))
+            )
     # number of slices, e.g. steps.
     fiber_len = np.round(n_slices * dl).astype(np.int32)
     fiber_pts = fiber_pts.astype(np.int32)
     return fiber_pts, fiber_len
 
 
-def simulate_fibers(volume_shape, n_fibers=1, radius_lim=(4, 10), length_lim=(0.2, 0.8),
-                    lat_lim=(0, np.pi), azth_lim=(0, np.pi), gap_lim=(3, 10),
-                    max_fails=10, max_len_loss=0.5, intersect=False):
+def simulate_fibers(
+    volume_shape,
+    n_fibers=1,
+    radius_lim=(4, 10),
+    length_lim=(0.2, 0.8),
+    lat_lim=(0, np.pi),
+    azth_lim=(0, np.pi),
+    gap_lim=(3, 10),
+    max_fails=10,
+    max_len_loss=0.5,
+    intersect=False,
+):
     """Simulates fibers in a volume.
 
     Simulates `n_fibers` of the radii and lengths in ranges `radius_lim` and `length_lim`,
@@ -173,29 +207,35 @@ def simulate_fibers(volume_shape, n_fibers=1, radius_lim=(4, 10), length_lim=(0.
     n_fails = 0
     while n_generated < n_fibers and n_fails < max_fails:
         length = min(volume_shape)
-        length = np.floor(length * random_in(length_lim, number=1)).astype(np.int32)
+        length = np.floor(length * _random_in(length_lim, number=1)).astype(np.int32)
 
-        offset = [random_in(olim, number=1) for olim in offset_lim]
+        offset = [_random_in(olim, number=1) for olim in offset_lim]
         offset = np.round(offset).astype(np.int32)
 
-        azth = random_in(azth_lim, number=1)
-        lat = random_in(lat_lim, number=1)
-        radius = random_in(radius_lim, number=1)
+        azth = _random_in(azth_lim, number=1)
+        lat = _random_in(lat_lim, number=1)
+        radius = _random_in(radius_lim, number=1)
 
-        gap = random_in(gap_lim, number=1)
+        gap = _random_in(gap_lim, number=1)
         gap = np.round(gap).astype(np.int32)
 
-        fiber_pts, fiber_len = mkfiber(dims, length, radius, azth, lat, offset)
-        gap_fiber_pts, gap_fiber_len = mkfiber(dims, length, radius + gap, azth, lat, offset)
+        fiber_pts, fiber_len = _mkfiber(dims, length, radius, azth, lat, offset)
+        gap_fiber_pts, gap_fiber_len = _mkfiber(
+            dims, length, radius + gap, azth, lat, offset
+        )
 
         # Length loss
-        if (1. - float(gap_fiber_len) / length) > max_len_loss:
+        if (1.0 - float(gap_fiber_len) / length) > max_len_loss:
             n_fails = n_fails + 1
             continue
 
         # Intersection
         if gap_fiber_pts.size:
-            X_gap, Y_gap, Z_gap = gap_fiber_pts[:, 0], gap_fiber_pts[:, 1], gap_fiber_pts[:, 2]
+            X_gap, Y_gap, Z_gap = (
+                gap_fiber_pts[:, 0],
+                gap_fiber_pts[:, 1],
+                gap_fiber_pts[:, 2],
+            )
             X, Y, Z = fiber_pts[:, 0], fiber_pts[:, 1], fiber_pts[:, 2]
 
             if not intersect:
@@ -203,16 +243,28 @@ def simulate_fibers(volume_shape, n_fibers=1, radius_lim=(4, 10), length_lim=(0.
                     n_fails = n_fails + 1
 
                     if n_fails == max_fails:
-                        print("The number of fails exceeded. Generated {} fibers".\
-                                    format(n_generated))
+                        print(
+                            "The number of fails exceeded. Generated {} fibers".format(
+                                n_generated
+                            )
+                        )
 
                     continue
 
             # Fill the volume
-            volume[Z, Y, X] = 1
-            lat_ref[Z, Y, X] = lat
-            azth_ref[Z, Y, X] = azth
-            diameter[Z, Y, X] = radius * 2
+            tmp_volume = np.zeros_like(volume)
+            tmp_volume[Z, Y, X] = 1
+            for idx in range(tmp_volume.shape[0]):
+                slc = tmp_volume[idx, :, :]
+                slc[ndi.binary_fill_holes(slc)] = 1
+                tmp_volume[idx, :, :] = slc
+                
+            fullZ, fullY, fullX = np.nonzero(tmp_volume)
+
+            volume[fullZ, fullY, fullX] = 1
+            lat_ref[fullZ, fullY, fullX] = lat
+            azth_ref[fullZ, fullY, fullX] = azth
+            diameter[fullZ, fullY, fullX] = radius * 2
             n_generated = n_generated + 1
             n_fails = 0
 
@@ -222,9 +274,18 @@ def simulate_fibers(volume_shape, n_fibers=1, radius_lim=(4, 10), length_lim=(0.
     return (volume, lat_ref, azth_ref, diameter, n_generated, elapsed_time)
 
 
-def generate_datasets(volume_size=(512, 512, 512), n_fibers=50, radius_lim=(4, 10),
-                      length_lim=(0.2, 0.8), gap_lim=(3, 10), max_fails=100,
-                      median_rad=3, intersect=False, output_dir=None, params=None):
+def generate_datasets(
+    volume_size=(512, 512, 512),
+    n_fibers=50,
+    radius_lim=(4, 10),
+    length_lim=(0.2, 0.8),
+    gap_lim=(3, 10),
+    max_fails=100,
+    median_rad=3,
+    intersect=False,
+    output_dir=None,
+    params=None,
+):
     """Simulates speficied configurations of fibers and stores in a npy file.
 
     Simulates a number of fiber configurations speficied in `params` with `n_fibers` of the
@@ -271,47 +332,73 @@ def generate_datasets(volume_size=(512, 512, 512), n_fibers=50, radius_lim=(4, 1
         The dictionary of generated datasets of specified configurations.
     """
     if params is None:
-        params = {'aligned': {'lat_rng': (15, 15), 'azth_rng': (27, 27)},
-                  'medium': {'lat_rng': (0, 45), 'azth_rng': (-45, 45)},
-                  'disordered': {'lat_rng': (0, 90), 'azth_rng': (-89, 90)}}
+        params = {
+            "aligned": {"lat_rng": (15, 15), "azth_rng": (27, 27)},
+            "medium": {"lat_rng": (0, 45), "azth_rng": (-45, 45)},
+            "disordered": {"lat_rng": (0, 90), "azth_rng": (-89, 90)},
+        }
 
     out = {}
     for name, config in params.items():
-        data, lat_data, azth_data, diameter_data, n_gen_fibers, elapsed_time = \
-                simulate_fibers(volume_size,
-                                lat_lim=tuple([np.deg2rad(v) for v in config['lat_rng']]),
-                                azth_lim=tuple([np.deg2rad(v) for v in config['azth_rng']]),
-                                radius_lim=radius_lim,
-                                n_fibers=n_fibers,
-                                max_fails=max_fails,
-                                gap_lim=gap_lim,
-                                length_lim=length_lim,
-                                intersect=intersect)
+        (
+            data,
+            lat_data,
+            azth_data,
+            diameter_data,
+            n_gen_fibers,
+            elapsed_time,
+        ) = simulate_fibers(
+            volume_size,
+            lat_lim=tuple([np.deg2rad(v) for v in config["lat_rng"]]),
+            azth_lim=tuple([np.deg2rad(v) for v in config["azth_rng"]]),
+            radius_lim=radius_lim,
+            n_fibers=n_fibers,
+            max_fails=max_fails,
+            gap_lim=gap_lim,
+            length_lim=length_lim,
+            intersect=intersect,
+        )
 
         data_8bit = data.astype(np.uint8)
         data_8bit = ndi.binary_fill_holes(data_8bit)
         data_8bit = ndi.median_filter(data_8bit, footprint=morphology.ball(median_rad))
         lat_data = ndi.median_filter(lat_data, footprint=morphology.ball(median_rad))
         azth_data = ndi.median_filter(azth_data, footprint=morphology.ball(median_rad))
-        diameter_data = ndi.median_filter(diameter_data, footprint=morphology.ball(median_rad))
+        diameter_data = ndi.median_filter(
+            diameter_data, footprint=morphology.ball(median_rad)
+        )
 
-        out[name] = {'data': data_8bit,
-                     'lat': lat_data,
-                     'azth': azth_data,
-                     'diameter': diameter_data,
-                     'skeleton': morphology.skeletonize_3d(data_8bit).astype(np.float32),
-                     'props': {'n_gen_fibers': n_gen_fibers,
-                               'time': elapsed_time,
-                               'intersect': intersect}}
+        out[name] = {
+            "data": data_8bit,
+            "lat": lat_data,
+            "azth": azth_data,
+            "diameter": diameter_data,
+            "skeleton": morphology.skeletonize_3d(data_8bit).astype(np.float32),
+            "props": {
+                "n_gen_fibers": n_gen_fibers,
+                "time": elapsed_time,
+                "intersect": intersect,
+            },
+        }
 
     if output_dir is not None and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    np.save(os.path.join(output_dir, 'dataset_fibers_n{}_r{}_{}_g{}_{}_mr{}_i{}.npy'.
-                                            format(n_fibers,
-                                                   radius_lim[0], radius_lim[-1],
-                                                   gap_lim[0], gap_lim[-1],
-                                                   median_rad, int(intersect))), out)
+    np.save(
+        os.path.join(
+            output_dir,
+            "dataset_fibers_n{}_r{}_{}_g{}_{}_mr{}_i{}.npy".format(
+                n_fibers,
+                radius_lim[0],
+                radius_lim[-1],
+                gap_lim[0],
+                gap_lim[-1],
+                median_rad,
+                int(intersect),
+            ),
+        ),
+        out,
+    )
 
     return out
 
@@ -354,13 +441,16 @@ def simulate_particles(volume_shape, n_particles=1, radius_lim=(3, 30), max_fail
     n_fails = 0
     while n_generated < n_particles and n_fails < max_fails:
         if (n_generated % 100 == 0) or (n_generated == n_particles):
-            print('n_generated = {}/{}, n_fails = {}/{}'.format(n_generated, n_particles,
-                                                                n_fails, max_fails))
+            print(
+                "n_generated = {}/{}, n_fails = {}/{}".format(
+                    n_generated, n_particles, n_fails, max_fails
+                )
+            )
 
-        offset = [random_in(olim, number=1) for olim in offset_lim]
+        offset = [_random_in(olim, number=1) for olim in offset_lim]
         offset = np.round(offset).astype(np.int32)
 
-        radius = np.round(random_in(radius_lim, number=1))
+        radius = np.round(_random_in(radius_lim, number=1))
 
         gen_ball = morphology.ball(radius, dtype=np.int32)
         Z, Y, X = gen_ball.nonzero()
@@ -369,10 +459,14 @@ def simulate_particles(volume_shape, n_particles=1, radius_lim=(3, 30), max_fail
         Y += offset[1]
         X += offset[2]
 
-        if np.max(X) >= dims[0] or np.min(X) < 0 or \
-           np.max(Y) >= dims[1] or np.min(Y) < 0 or \
-           np.max(Z) >= dims[2] or np.min(Z) < 0:
-
+        if (
+            np.max(X) >= dims[0]
+            or np.min(X) < 0
+            or np.max(Y) >= dims[1]
+            or np.min(Y) < 0
+            or np.max(Z) >= dims[2]
+            or np.min(Z) < 0
+        ):
             n_fails = n_fails + 1
             continue
 
@@ -380,8 +474,11 @@ def simulate_particles(volume_shape, n_particles=1, radius_lim=(3, 30), max_fail
             n_fails = n_fails + 1
 
             if n_fails == max_fails:
-                print("The number of fails exceeded. Generated {} particles".\
-                            format(n_generated))
+                print(
+                    "The number of fails exceeded. Generated {} particles".format(
+                        n_generated
+                    )
+                )
 
             continue
 
@@ -397,8 +494,13 @@ def simulate_particles(volume_shape, n_particles=1, radius_lim=(3, 30), max_fail
     return (volume, diameter, n_generated, elapsed_time)
 
 
-def generate_particle_dataset(volume_size=(512, 512, 512), n_particles=500,
-                              radius_lim=(4, 10), max_fails=100, output_dir=None):
+def generate_particle_dataset(
+    volume_size=(512, 512, 512),
+    n_particles=500,
+    radius_lim=(4, 10),
+    max_fails=100,
+    output_dir=None,
+):
     """Simulates a speficied number of particles and stores complete dataset in a npy file.
 
     Parameters
@@ -425,28 +527,34 @@ def generate_particle_dataset(volume_size=(512, 512, 512), n_particles=500,
     """
     out = {}
 
-    data, diameter_data, n_gen_particle, elapsed_time = \
-                            simulate_particles(volume_size,
-                                               n_particles=n_particles,
-                                               radius_lim=radius_lim,
-                                               max_fails=max_fails)
+    data, diameter_data, n_gen_particle, elapsed_time = simulate_particles(
+        volume_size, n_particles=n_particles, radius_lim=radius_lim, max_fails=max_fails
+    )
 
-    out['normal'] = {'data': data,
-                     'diameter': diameter_data,
-                     'props': {'n_gen_particles': n_gen_particle,
-                               'time': elapsed_time}}
+    out["normal"] = {
+        "data": data,
+        "diameter": diameter_data,
+        "props": {"n_gen_particles": n_gen_particle, "time": elapsed_time},
+    }
 
     if output_dir is not None and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    np.save(os.path.join(output_dir,
-                         'dataset_particles_n{}_r{}_{}.npy'.format(n_particles,
-                                                                   radius_lim[0],
-                                                                   radius_lim[-1])), out)
+    np.save(
+        os.path.join(
+            output_dir,
+            "dataset_particles_n{}_r{}_{}.npy".format(
+                n_particles, radius_lim[0], radius_lim[-1]
+            ),
+        ),
+        out,
+    )
     return out
 
 
-def generate_blobs(volume_size, blob_size_fraction=0.1, transparency_ratio=0.5, sigma=90.):
+def generate_blobs(
+    volume_size, blob_size_fraction=0.1, transparency_ratio=0.5, sigma=90.0
+):
     """Generates random blobs smoothed with Gaussian filter in a volume.
 
     Generates several blobs of random size in a volume using function from scikit-image,
@@ -472,19 +580,28 @@ def generate_blobs(volume_size, blob_size_fraction=0.1, transparency_ratio=0.5, 
     blobs_smeared : ndarray
         The volume with smoothed blobs of a specified transparency.
     """
-    blobs = skidata.binary_blobs(length=max(volume_size),
-                                 blob_size_fraction=blob_size_fraction,
-                                 n_dim=len(volume_size),
-                                 seed=1)
+    blobs = skidata.binary_blobs(
+        length=max(volume_size),
+        blob_size_fraction=blob_size_fraction,
+        n_dim=len(volume_size),
+        seed=1,
+    )
     blobs = blobs.astype(np.float32)
 
     blobs_smeared = ndi.gaussian_filter(blobs, sigma) * transparency_ratio
     return blobs_smeared
 
 
-def generate_noised_data(datasets_path, noise_levels=[0.0, 0.15, 0.3],
-                         smooth_levels=[0.0, 1.0, 2.0], blobs=None, use_median=True,
-                         median_rad=3, output_dir=None, n_processes=9):
+def generate_noised_data(
+    datasets_path,
+    noise_levels=[0.0, 0.15, 0.3],
+    smooth_levels=[0.0, 1.0, 2.0],
+    blobs=None,
+    use_median=True,
+    median_rad=3,
+    output_dir=None,
+    n_processes=9,
+):
     """Contaminates datasets with a speficied additive Gaussian noise and smoothing level.
 
     Contaminates the datasets (generated with `generate_datasets` function) with the specified
@@ -531,11 +648,15 @@ def generate_noised_data(datasets_path, noise_levels=[0.0, 0.15, 0.3],
     dataset_filename = os.path.splitext(dataset_filename)[0]
     output_dir = os.path.join(output_dir, dataset_filename)
 
-    data_items = [(dname, dpath, blb, odir)
-                      for dname, dpath, blb, odir in zip(datasets_names,
-                                                         [datasets_path]*n_datasets,
-                                                         [blobs]*n_datasets,
-                                                         [output_dir]*n_datasets)]
+    data_items = [
+        (dname, dpath, blb, odir)
+        for dname, dpath, blb, odir in zip(
+            datasets_names,
+            [datasets_path] * n_datasets,
+            [blobs] * n_datasets,
+            [output_dir] * n_datasets,
+        )
+    ]
 
     params = [data_items, noise_levels, smooth_levels]
     params = [p for p in itertools.product(*params)]
@@ -546,14 +667,13 @@ def generate_noised_data(datasets_path, noise_levels=[0.0, 0.15, 0.3],
     proc_pool.join()
     proc_pool.terminate()
 
-    np.save(os.path.join(output_dir, 'params.npy'), results)
+    np.save(os.path.join(output_dir, "params.npy"), results)
 
     return results
 
 
 def unpack_additive_noise(args):
-    """Unpack arguments and return result of `additive_noise` function.
-    """
+    """Unpack arguments and return result of `additive_noise` function."""
     return additive_noise(*args)
 
 
@@ -592,80 +712,92 @@ def additive_noise(params, noise_lvl, smooth_lvl, use_median=True, median_rad=3)
     name, dataset_path, blobs, output_dir = params
 
     datasets = np.load(dataset_path).item()
-    data = datasets[name]['data']
-    data_skel = datasets[name]['skeleton']
+    data = datasets[name]["data"]
+    data_skel = datasets[name]["skeleton"]
 
     def median_fltr(data, footprint):
         out = np.zeros_like(data, dtype=np.uint8)
 
-        for i in xrange(data.shape[0]):
+        for i in range(data.shape[0]):
             out[i] = filters.rank.median(data[i], selem=footprint)
 
         return out
 
     def threshold_dataset(data):
         data_seg = np.zeros_like(data, dtype=np.uint8)
-        data_8bit = exposure.rescale_intensity(data, in_range='image',
-                                               out_range=np.uint8).astype(np.uint8)
+        data_8bit = exposure.rescale_intensity(
+            data, in_range="image", out_range=np.uint8
+        ).astype(np.uint8)
 
-        for i in xrange(data_seg.shape[0]):
+        for i in range(data_seg.shape[0]):
             dslice = data_8bit[i]
             th_val = filters.threshold_otsu(dslice)
             data_seg[i] = (dslice > th_val).astype(np.uint8)
 
         return data_seg
 
-    print('{}: Noise: {} | Smooth: {}'.format(name, noise_lvl, smooth_lvl))
+    print("{}: Noise: {} | Smooth: {}".format(name, noise_lvl, smooth_lvl))
 
     data_ref = data.astype(np.float32)
-    data_ref_skel = exposure.rescale_intensity(data_skel,
-                                               out_range=(0, 1)).astype(np.uint8)
+    data_ref_skel = exposure.rescale_intensity(data_skel, out_range=(0, 1)).astype(
+        np.uint8
+    )
 
     data_noised = data_ref + noise_lvl * np.random.randn(*data_ref.shape)
 
-    if (blobs is not None) and (noise_lvl != 0.) and (smooth_lvl != 0.):
+    if (blobs is not None) and (noise_lvl != 0.0) and (smooth_lvl != 0.0):
         data_noised += blobs
 
     if smooth_lvl != 0:
         data_noised = ndi.gaussian_filter(data_noised, smooth_lvl)
 
     snr = np.mean(data_noised[data_ref != 0]) / np.std(data_noised[data_ref == 0])
-    data_noised = exposure.rescale_intensity(data_noised, out_range=np.uint8).astype(np.uint8)
+    data_noised = exposure.rescale_intensity(data_noised, out_range=np.uint8).astype(
+        np.uint8
+    )
 
-    if use_median and (noise_lvl != 0.) and (smooth_lvl != 0.):
+    if use_median and (noise_lvl != 0.0) and (smooth_lvl != 0.0):
         data_noised = median_fltr(data_noised, morphology.disk(median_rad))
 
     data_noised_seg = threshold_dataset(data_noised)
     data_noised_skel = morphology.skeletonize_3d(data_noised_seg)
 
-    precision, recall, fbeta_score, support = \
-                    metrics.precision_recall_fscore_support(data_ref_skel.flatten(),
-                                                            data_noised_skel.flatten(),
-                                                            beta=1.0,
-                                                            pos_label=1,
-                                                            average='binary')
+    precision, recall, fbeta_score, support = metrics.precision_recall_fscore_support(
+        data_ref_skel.flatten(),
+        data_noised_skel.flatten(),
+        beta=1.0,
+        pos_label=1,
+        average="binary",
+    )
 
-    print('Precision: {}, Recall: {}, F1-score: {}'.format(precision, recall, fbeta_score))
+    print(
+        "Precision: {}, Recall: {}, F1-score: {}".format(precision, recall, fbeta_score)
+    )
 
-    data_out = {'data': data_ref,
-                'data_noised': data_noised,
-                'skeleton': data_ref_skel,
-                'skeleton_noised': data_noised_skel,
-                'seg_noised': data_noised_seg}
+    data_out = {
+        "data": data_ref,
+        "data_noised": data_noised,
+        "skeleton": data_ref_skel,
+        "skeleton_noised": data_noised_skel,
+        "seg_noised": data_noised_seg,
+    }
 
-    dataset_outpath = os.path.join(output_dir,
-                                'dataset_noised_fibers_{}_nl{}_sl{}.npy'.
-                                            format(name, noise_lvl, smooth_lvl))
+    dataset_outpath = os.path.join(
+        output_dir,
+        "dataset_noised_fibers_{}_nl{}_sl{}.npy".format(name, noise_lvl, smooth_lvl),
+    )
 
-    datasets_props = {'ref_dataset_path': dataset_path,
-                      'dataset_path': dataset_outpath,
-                      'name': name,
-                      'snr': snr,
-                      'precision': precision,
-                      'recall': recall,
-                      'f1_score': fbeta_score,
-                      'adgauss_std': noise_lvl,
-                      'smooth_sigma': smooth_lvl}
+    datasets_props = {
+        "ref_dataset_path": dataset_path,
+        "dataset_path": dataset_outpath,
+        "name": name,
+        "snr": snr,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": fbeta_score,
+        "adgauss_std": noise_lvl,
+        "smooth_sigma": smooth_lvl,
+    }
 
     if output_dir is not None:
         if not os.path.exists(output_dir):
