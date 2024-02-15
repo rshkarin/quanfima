@@ -1,6 +1,6 @@
-from __future__ import print_function
 import os
 import operator
+
 import numpy as np
 from scipy import ndimage as ndi
 from skimage import morphology
@@ -40,9 +40,13 @@ def prepare_data(data, dilate_iterations=1, sigma=0.5):
     elif data.ndim == 2:
         skeleton = morphology.skeletonize(data_8bit)
     else:
-        raise ValueError('Incorrect number of data dimensions, it supports from 2 to 3 dimensions.')
+        raise ValueError(
+            "Incorrect number of data dimensions, it supports from 2 to 3 dimensions."
+        )
 
-    skeleton_thick = ndi.binary_dilation(skeleton, iterations=dilate_iterations).astype(np.float32)
+    skeleton_thick = ndi.binary_dilation(skeleton, iterations=dilate_iterations).astype(
+        np.float32
+    )
     skeleton_thick = ndi.filters.gaussian_filter(skeleton_thick, sigma)
 
     return (data, skeleton, skeleton_thick)
@@ -70,10 +74,18 @@ def geo2rgb(lat, azth, azth_max=np.pi, lat_max=np.pi):
     array : tuple of values
         The tuple of RGB values [R, G, B].
     """
-    return colors.hsv_to_rgb([azth/azth_max, lat/lat_max, 1.0])
+    return colors.hsv_to_rgb([azth / azth_max, lat / lat_max, 1.0])
 
 
-def calculate_tukey_posthoc(df, column, type_column='type', verbose=True, write=False, name=None, output_dir=None):
+def calculate_tukey_posthoc(
+    df,
+    column,
+    type_column="type",
+    verbose=True,
+    write=False,
+    name=None,
+    output_dir=None,
+):
     """Computes p-values using ANOVA with post-hoc Tukey HSD for a given DataFrame.
 
     Estimates p-values for a given DataFrame assuming that the sample
@@ -116,16 +128,16 @@ def calculate_tukey_posthoc(df, column, type_column='type', verbose=True, write=
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        fout = open(os.path.join(output_dir, name + '.txt'), 'w')
-        print(os.path.join(output_dir, name + '.txt'))
+        fout = open(os.path.join(output_dir, name + ".txt"), "w")
+        print(os.path.join(output_dir, name + ".txt"))
 
     if write:
-        print('Tukey post-hoc ({0})'.format(column), end="", file=fout)
+        print("Tukey post-hoc ({0})".format(column), end="", file=fout)
         print(tt, end="", file=fout)
         print(mc.groupsunique, end="", file=fout)
 
     if verbose:
-        print('Tukey post-hoc ({0})'%(column))
+        print("Tukey post-hoc ({0})" % (column))
         print(tt)
         print(mc.groupsunique)
 
@@ -136,15 +148,15 @@ def calculate_tukey_posthoc(df, column, type_column='type', verbose=True, write=
     g1idxs, g2idxs = mc.pairindices
 
     for g1i, g2i, p in zip(g1idxs, g2idxs, pvals):
-        gname = '{}-{}'.format(groups[g1i], groups[g2i])
+        gname = "{}-{}".format(groups[g1i], groups[g2i])
         out[gname] = p
 
     min_item = min(out.iteritems(), key=operator.itemgetter(1))
 
     for grp, p in out.items():
         if fout and write:
-            print >> fout, '{}: {}'.format(grp, p)
+            print("{}: {}".format(grp, p), file=fout)
         if verbose:
-            print(grp, ': ', p)
+            print(grp, ": ", p)
 
     return out, min_item
